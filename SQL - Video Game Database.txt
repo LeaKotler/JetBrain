@@ -1,0 +1,80 @@
+-- write your queries here
+video_games_tb = "CREATE TABLE video_games (
+id INT PRIMARY KEY,
+name VARCHAR(40),
+game_genre VARCHAR(40),
+game_developer VARCHAR(40),
+release_date DATE);"
+
+game_developers_tb = "CREATE TABLE game_developers(
+id INT PRIMARY KEY,
+name VARCHAR(40),
+address VARCHAR(40),
+state VARCHAR(40),
+city VARCHAR(40),
+country VARCHAR(40))"
+
+platforms_tb = "CREATE TABLE platforms(
+id INT PRIMARY KEY,
+name VARCHAR(40),
+company_id INT,
+company VARCHAR(40),
+release_date DATE,
+original_price INT)"
+
+platforms_games_tb = "CREATE TABLE platforms_games(
+game_id INT,
+platform_id INT,
+platform_name VARCHAR(40),
+CONSTRAINT ids PRIMARY KEY (game_id,platform_id)
+FOREIGN KEY (game_id)
+REFERENCES video_games(id),
+FOREIGN KEY (platform_id)
+REFERENCES platforms(id));"
+
+characters_tb = "CREATE TABLE characters(
+id INT PRIMARY KEY,
+name VARCHAR(40),
+birthday DATE,
+gender BOOLEAN,
+info VARCHAR (255))"
+
+games_characters_tb = "CREATE TABLE games_characters(
+character_id INT,
+character_name VARCHAR(40),
+game_id INT,
+CONSTRAINT ids PRIMARY KEY (game_id,character_id)
+FOREIGN KEY (game_id)
+REFERENCES video_games(id),
+FOREIGN KEY (character_id)
+REFERENCES characters(id))"
+
+//Delete rows from games_characters, where column game_id doesn't have a related character_id;
+delete_rows = "DELETE FROM games_characters WHERE character_id IS NULL"
+//In the columns with the date content, set it to YYYY-MM-DD format.
+alter_table_platforms = "UPDATE platforms SET release_date = DATE(release_date)"
+alter_table_characters = "UPDATE characters SET birthday = DATE(birthday)"
+
+//Search for Nathan Drake in the tables to find out more about him;
+search_nathan = "SELECT * FROM characters WHERE name = 'Nathan Drake'"
+
+Sum up the total characters directly connected to Nathan Drake, use the "info" column in the "characters" table for that search;
+how_many_people = "SELECT COUNT(*) FROM characters WHERE info LIKE '%Nathan Drake%'" 
+
+Find where (street, state, city, country) the creators of the developer's favorite game are located.
+//The selection must return the address of the developer company that created the series of games in which the main character is Nathan Drake.
+find_location = "SELECT address,state,city,country FROM game_developers 
+WHERE name = (SELECT game_developer FROM video_games WHERE id = (SELECT game_id FROM games_characters WHERE character_name ='Nathan Drake'))"
+
+Count how many games in the database were made in California;
+count_games_ca = "SELECT COUNT(v.id) FROM video_games AS v JOIN game_developers AS g ON v.game_developer = g.name
+WHERE g.state = 'California'"
+
+Discover the state with more games released on the database and, in this state, find the full address (street, city, state, country) of the lastest developer company to release a game.
+address =  "SELECT g.address,  g.state, g.city, g.country FROM game_developers AS g JOIN video_games AS v ON v.game_developer = g.name
+WHERE g.state = (SELECT g.state FROM game_developers AS g JOIN video_games AS v ON v.game_developer = g.name
+GROUP BY g.state
+ORDER BY COUNT (g.state) DESC LIMIT 1) ORDER BY v.release_date DESC
+LIMIT 1
+
+"
