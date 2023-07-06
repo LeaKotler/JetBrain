@@ -1,0 +1,115 @@
+--Creating Tables
+CREATE TABLE "person"(
+  "person_id" VARCHAR(9) PRIMARY KEY,
+  "full_name" TEXT,
+  "address" TEXT,
+  "building_number" TEXT,
+  "phone_number" TEXT
+);
+
+CREATE TABLE "teacher"(
+  "person_id" VARCHAR(9) PRIMARY KEY,
+  "class_code" TEXT
+);
+
+CREATE TABLE "student" (
+    "person_id" VARCHAR(9) PRIMARY KEY,
+    "grade_code" TEXT
+);
+
+CREATE TABLE "score1" (
+    "person_id" VARCHAR(9),
+    "score" INTEGER
+);
+
+CREATE TABLE "score2" (
+    "person_id" VARCHAR(9),
+    "score" INTEGER
+);
+
+CREATE TABLE "score3" (
+    "person_id" VARCHAR(9),
+    "score" INTEGER
+);
+
+CREATE TABLE "score" (
+    "person_id" VARCHAR(9),
+    "score" INTEGER
+);
+
+-- Import data from provided datasets
+.mode csv
+.import --skip 1 person.csv person
+.import --skip 1 teacher.csv teacher
+.import --skip 1 score1.csv score1
+.import --skip 1 score2.csv score2
+.import --skip 1 score3.csv score3
+.mode column
+
+-- Initialize the student grades table with the students person_ids
+INSERT INTO student (person_id)
+SELECT person_id
+FROM person
+WHERE person_id NOT IN (
+        SELECT person_id
+        FROM teacher
+    );
+
+-- Fill the unified table of all scores
+INSERT INTO score
+SELECT * FROM score1
+UNION ALL
+SELECT * FROM score2
+UNION ALL
+SELECT * FROM score3;
+
+-- Drop the intermediary score tables
+DROP TABLE score1;
+DROP TABLE score2;
+DROP TABLE score3;
+
+-- Fill in grade codes
+UPDATE   student
+SET grade_code = 'GD-09'
+WHERE student.person_id NOT IN (
+        SELECT person_id
+        FROM score
+    );
+
+UPDATE student
+SET grade_code = 'GD-10'
+WHERE student.person_id IN (
+        SELECT person_id
+        FROM score
+        GROUP BY person_id
+        HAVING COUNT(score) = 1
+    );
+
+UPDATE student
+SET grade_code = 'GD-11'
+WHERE student.person_id IN (
+        SELECT person_id
+        FROM score
+        GROUP BY person_id
+        HAVING COUNT(score) = 2
+    );
+
+UPDATE student
+SET grade_code = 'GD-12'
+WHERE student.person_id IN (
+        SELECT person_id
+        FROM score
+        GROUP BY person_id
+        HAVING COUNT(score) = 3
+    );
+
+-- Print 12'th graders score students
+SELECT person_id, ROUND(AVG(score), 2) AS avg_score
+FROM score
+WHERE person_id IN (
+        SELECT person_id
+        FROM student
+        WHERE grade_code = 'GD-12'
+    )
+GROUP BY person_id
+ORDER BY avg_score DESC;
